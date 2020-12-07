@@ -1,1 +1,1 @@
-window.location.replace("http://139.59.248.153/");
+window.location.replace("https://tatebulic.com.au");
