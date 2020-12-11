@@ -1,125 +1,378 @@
 <!DOCTYPE html>
-
-<head>
+<html>
+  <head>
     <meta charset="utf-8" />
     <title>geojson test</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/vue@next"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+      }
 
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        z-index: 0;
+        height: 100%;
+      }
 
-        .mapboxgl-popup {
-            max-width: 400px;
-            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-        }
+      #main {
+        margin-top: 20px;
+        position: absolute;
+        top: 0;
+        width: 100%;
+        margin-right: 20px;
+        display: flex;
+        flex-direction: row;
+        z-index: 100;
+        justify-content: flex-end;
+      }
+
+      #selects {
+        margin-right: 30px;
+      }
+
+      #selects select:first-of-type {
+        margin-right: 10px;
+      }
+
+      .mapboxgl-popup {
+        max-width: 400px;
+        font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <div id="map"></div>
+  <body>
+    <div id="app">
+      <div id="main">
+        <div id="selects">
+          <a id="downloadAnchorElem" style="display: none"></a>
+          <select
+            v-model="selectedYear"
+            @change="selectNew"
+            name="years"
+            id="years"
+          >
+            <option value="2014">2014</option>
+            <option value="2015">2015</option>
+            <option value="2016">2016</option>
+            <option value="2017">2017</option>
+            <option value="2018">2018</option>
+            <option value="2019">2019</option>
+            <option value="2020 (Oct)">2020 (Oct)</option>
+          </select>
+          <select
+            v-model="selectedType"
+            @change="selectNew"
+            value="types"
+            id="types"
+          >
+            <option value="arch" selected>Arch</option>
+            <option value="draftsperson">Draftsperson</option>
+            <option value="builder">Builder</option>
+            <option value="notreported">Not Reported</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="map"></div>
+    </div>
     <script>
-        // TO MAKE THE MAP APPEAR YOU MUST
-        // ADD YOUR ACCESS TOKEN FROM
-        // https://account.mapbox.com
-        mapboxgl.accessToken = 'pk.eyJ1IjoidGF0ZWIiLCJhIjoiY2tnZnJxa3QzMHU1czJ4bDdpYnZyYmlxbSJ9.cqz_jYmVltiHaLzWCl0bZg';
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11',
+      // TO MAKE THE MAP APPEAR YOU MUST
+      // ADD YOUR ACCESS TOKEN FROM
+      // https://account.mapbox.com
+
+      const Main = {
+        data() {
+          return {
+            placesArray: [
+              "banyule",
+              "bayside",
+              "boroondara",
+              "brimbank",
+              "cardinia",
+              "casey",
+              "darebin",
+              "frankston",
+              "glen eira",
+              "greater dandenong",
+              "hobsons bay",
+              "hume",
+              "kingston",
+              "knox",
+              "manningham",
+              "maribyrnong",
+              "maroondah",
+              "melbourne",
+              "melton",
+              "monash",
+              "moonee valley",
+              "moreland",
+              "mornington peninsula",
+              "nillumbik",
+              "port phillip",
+              "stonnington",
+              "whitehorse",
+              "whittlesea",
+              "wyndham",
+              "yarra",
+              "yarra ranges",
+            ],
+            types: ["Arch", "Draftsperson", "Builder", "Not Reported"],
+            selectedType: "arch",
+            selectedYear: "2020 (Oct)",
+            mapData: {},
+            numberData: {},
+            finalisedMapData: {},
+            count: 0,
+            map: undefined,
+          };
+        },
+        mounted() {
+          var self = this;
+          mapboxgl.accessToken =
+            "pk.eyJ1IjoidGF0ZWIiLCJhIjoiY2tnZnJxa3QzMHU1czJ4bDdpYnZyYmlxbSJ9.cqz_jYmVltiHaLzWCl0bZg";
+          this.map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/streets-v11",
             center: [144, -45.137451890638886],
-            zoom: 5
-        });
+            zoom: 5,
+          });
 
-
-
-        map.on('load', async function () {
-
-
+          this.map.on("load", async function () {
             await fetch("stuff.json")
-                .then(res => {
-                    return res.json()
-                }).then(data => {
-                    var finalData = []
-                    for (let dataPoint in data) {
-                        finalData.push({
-                            'type': 'Feature',
-                            'geometry': {
-                                'type': "Polygon",
-                                'coordinates': [data[dataPoint].boundaries]
-                            },
-                            'properties': {
-                                'title': data[dataPoint].name,
-                                'lng': data[dataPoint].labelpoint[0],
-                                'lat': data[dataPoint].labelpoint[1],
-                            },
-                        })
+              .then((res) => {
+                return res.json();
+              })
+              .then((data) => {
+                return (self.mapData = data);
+              })
+              .then(() => {
+                return fetch("data.json");
+              })
+              .then((res) => {
+                return res.json();
+              })
+              .then((data) => {
+                return (self.numberData = data);
+              })
+              .then(() => {
+                var data = self.mapData;
+                console.log(self.placesArray);
+                var finalData = [];
+                for (let dataPoint in data) {
+                  if (
+                    self.placesArray.indexOf(
+                      data[dataPoint].name.toLowerCase()
+                    ) !== -1
+                  ) {
+                    let filtered = self.numberData.filter(
+                      (x) =>
+                        x["Municipal Name"].toLowerCase() ==
+                        data[dataPoint].name.toLowerCase()
+                    );
+                    var finalFiltered = {};
+                    function formatNum(inp) {
+                      if (inp == "-") return 0;
+                      return Number(inp.toString().replace(/[^0-9.-]+/g, ""));
                     }
-                    return finalData
-                })
-                .then(finalData => {
-                    console.log(finalData)
-                    map.addSource("municipals", {
-                        "type": "geojson",
-                        "data": {
-                            'type': "FeatureCollection",
-                            'features': finalData
-                        }
-                    })
-                })
 
-            map.addLayer({
-                'id': 'municipals',
-                'type': 'fill',
-                'source': 'municipals',
-                'layout': {},
-                'paint': {
-                    'fill-outline-color': 'black',
-                    'fill-color': '#088',
-                    'fill-opacity': 0.8
+                    function getPercent(calc, total) {
+                      return (calc / total) * 100;
+                    }
+
+                    for (let filterItem in filtered) {
+                      let item = filtered[filterItem];
+                      let totalPermits = [
+                        formatNum(item["No. of Permits"]),
+                        formatNum(item["No. of Permits__1"]),
+                        formatNum(item["No. of Permits__2"]),
+                        formatNum(item["No. of Permits__8"]),
+                      ].reduce((a, b) => a + b, 0);
+                      finalFiltered[item["BASIS Year"]] = {
+                        arch: {
+                          permits: formatNum(item["No. of Permits"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits"]),
+                            totalPermits
+                          ),
+                        },
+                        draftsperson: {
+                          permits: formatNum(item["No. of Permits__1"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__1"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__1"]),
+                            totalPermits
+                          ),
+                        },
+                        builder: {
+                          permits: formatNum(item["No. of Permits__2"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__2"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__2"]),
+                            totalPermits
+                          ),
+                        },
+                        notreported: {
+                          permits: formatNum(item["No. of Permits__8"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__8"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__8"]),
+                            totalPermits
+                          ),
+                        },
+                      };
+                    }
+                    finalData.push({
+                      type: "Feature",
+                      geometry: {
+                        type: "Polygon",
+                        coordinates: [data[dataPoint].boundaries],
+                      },
+                      properties: {
+                        title: data[dataPoint].name,
+                        lng: data[dataPoint].labelpoint[0],
+                        lat: data[dataPoint].labelpoint[1],
+                        data: finalFiltered,
+                      },
+                    });
+                  }
                 }
+                return finalData;
+              })
+              .then((finalData) => {
+                let sourcedData = {
+                  type: "geojson",
+                  data: {
+                    type: "FeatureCollection",
+                    features: finalData,
+                  },
+                };
+                let secondSource = {
+                  type: "FeatureCollection",
+                  features: finalData,
+                };
+                self.finalisedMapData = secondSource;
+                console.log(secondSource);
+
+                var dataStr =
+                  "data:text/json;charset=utf-8," +
+                  encodeURIComponent(JSON.stringify(secondSource));
+                var dlAnchorElem = document.getElementById(
+                  "downloadAnchorElem"
+                );
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", "scene.json");
+                dlAnchorElem.click();
+
+                self.map.addSource("municipals", sourcedData);
+              });
+
+            self.map.addLayer({
+              id: "municipals",
+              type: "fill",
+              source: "municipals",
+              layout: {},
+              paint: {
+                "fill-outline-color": "black",
+                "fill-opacity": 0.8,
+              },
             });
-            map.on('click', 'municipals', function (e) {
-                var properties = e.features[0].properties
-                var coordinates = e.lngLat;
-                var name = properties.title
+            self.map.on("click", "municipals", function (e) {
+              var properties = e.features[0].properties;
+              var coordinates = e.lngLat;
+              var name = properties.title;
+              var data = JSON.parse(properties.data);
 
-                // Ensure that if the map is zoomed out such that multiple
-                // copies of the feature are visible, the popup appears
-                // over the copy being pointed to.
-                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-                }
+              // Ensure that if the map is zoomed out such that multiple
+              // copies of the feature are visible, the popup appears
+              // over the copy being pointed to.
+              while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+              }
 
-                new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(name)
-                    .addTo(map);
+              console.log(data);
+              let html = `${name}<br /> ${data[self.selectedYear][
+                self.selectedType
+              ]["permitPercent"].toFixed(0)}%`;
+
+              new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(html)
+                .addTo(self.map);
             });
 
             // Change the cursor to a pointer when the mouse is over the places layer.
-            map.on('mouseenter', 'places', function () {
-                map.getCanvas().style.cursor = 'pointer';
+            self.map.on("mouseenter", "places", function () {
+              self.map.getCanvas().style.cursor = "pointer";
             });
 
             // Change it back to a pointer when it leaves.
-            map.on('mouseleave', 'places', function () {
-                map.getCanvas().style.cursor = '';
+            self.map.on("mouseleave", "places", function () {
+              self.map.getCanvas().style.cursor = "";
             });
-        });
+            self.selectNew();
+          });
+        },
+        methods: {
+          selectNew() {
+            let self = this;
+            let selectedYear = this.selectedYear;
+            let selectedType = this.selectedType;
+            let numbersToUse = this.finalisedMapData.features.map(
+              (x) =>
+                x.properties.data[selectedYear][selectedType]["permitPercent"]
+            );
+            let maximum = Math.max(...numbersToUse);
+            let minimum = Math.min(...numbersToUse);
 
+            var temp = this.finalisedMapData.features.filter((x) => {
+              let f = x.properties.data[selectedYear][selectedType]["permits"];
+              return Number.isNaN(f);
+            });
 
+            console.log(minimum, maximum, numbersToUse, temp);
+
+            this.map.setPaintProperty("municipals", "fill-color", [
+              "interpolate",
+              ["linear"],
+              [
+                "get",
+                "permitPercent",
+                ["get", selectedType, ["get", selectedYear, ["get", "data"]]],
+              ],
+              minimum,
+              "#fff44f",
+              maximum,
+              "#ce2029",
+            ]);
+          },
+        },
+      };
+
+      Vue.createApp(Main).mount("#app");
     </script>
-
-</body>
-
+  </body>
 </html>
