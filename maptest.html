@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>geojson test</title>
+    <title>Permit Map</title>
     <meta
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
@@ -35,17 +35,47 @@
         width: 100%;
         margin-right: 20px;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         z-index: 100;
         justify-content: flex-end;
+        align-items: flex-end;
       }
 
       #selects {
         margin-right: 30px;
+        width: 200px;
+        padding: 10px;
+        background-color: white;
       }
 
       #selects select:first-of-type {
         margin-right: 10px;
+      }
+
+      #key {
+        margin-top: 20px;
+        margin-right: 30px;
+        width: 200px;
+        background-color: white;
+        padding: 10px;
+      }
+
+      #key p {
+        margin: 0;
+      }
+
+      #gradient {
+        width: 90%;
+        padding: 10px 5%;
+        background: rgb(255, 244, 79);
+        background: linear-gradient(
+          90deg,
+          rgba(255, 244, 79, 1) 0%,
+          rgba(206, 32, 41, 1) 100%
+        );
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
       }
 
       .mapboxgl-popup {
@@ -85,6 +115,14 @@
             <option value="builder">Builder</option>
             <option value="notreported">Not Reported</option>
           </select>
+        </div>
+        <div id="key">
+          <p style="margin-bottom: 5px">Key:</p>
+          <div id="gradient">
+            <p>0%</p>
+            <div class="spacer"></div>
+            <p>100%</p>
+          </div>
         </div>
       </div>
 
@@ -147,9 +185,9 @@
             "pk.eyJ1IjoidGF0ZWIiLCJhIjoiY2tnZnJxa3QzMHU1czJ4bDdpYnZyYmlxbSJ9.cqz_jYmVltiHaLzWCl0bZg";
           this.map = new mapboxgl.Map({
             container: "map",
-            style: "mapbox://styles/mapbox/streets-v11",
-            center: [144, -45.137451890638886],
-            zoom: 5,
+            style: "mapbox://styles/mapbox/dark-v10",
+            center: [145.3, -37.937451890638886],
+            zoom: 8.5,
           });
 
           this.map.on("load", async function () {
@@ -277,7 +315,7 @@
                 self.finalisedMapData = secondSource;
                 console.log(secondSource);
 
-                var dataStr =
+                /*var dataStr =
                   "data:text/json;charset=utf-8," +
                   encodeURIComponent(JSON.stringify(secondSource));
                 var dlAnchorElem = document.getElementById(
@@ -285,7 +323,7 @@
                 );
                 dlAnchorElem.setAttribute("href", dataStr);
                 dlAnchorElem.setAttribute("download", "scene.json");
-                dlAnchorElem.click();
+                dlAnchorElem.click(); */
 
                 self.map.addSource("municipals", sourcedData);
               });
