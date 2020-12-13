@@ -120,8 +120,8 @@
           <p style="margin-bottom: 5px">Key:</p>
           <div id="gradient">
             <p>0%</p>
-            <div class="spacer"></div>
-            <p>100%</p>
+            <p>{{ maximum.toFixed(0) / 2 }}%</p>
+            <p>{{ maximum.toFixed(0) }}%</p>
           </div>
         </div>
       </div>
@@ -177,6 +177,7 @@
             finalisedMapData: {},
             count: 0,
             map: undefined,
+            maximum: 0,
           };
         },
         mounted() {
@@ -385,6 +386,7 @@
             );
             let maximum = Math.max(...numbersToUse);
             let minimum = Math.min(...numbersToUse);
+            self.maximum = maximum;
 
             var temp = this.finalisedMapData.features.filter((x) => {
               let f = x.properties.data[selectedYear][selectedType]["permits"];
