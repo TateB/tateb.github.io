@@ -12,7 +12,7 @@
       href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css"
       rel="stylesheet"
     />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.0.2/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue@next"></script>
     <style>
       body {
         margin: 0;
@@ -129,6 +129,10 @@
       <div id="map"></div>
     </div>
     <script>
+      // TO MAKE THE MAP APPEAR YOU MUST
+      // ADD YOUR ACCESS TOKEN FROM
+      // https://account.mapbox.com
+
       const Main = {
         data() {
           return {
@@ -168,6 +172,8 @@
             types: ["Arch", "Draftsperson", "Builder", "Not Reported"],
             selectedType: "arch",
             selectedYear: "2020 (Oct)",
+            mapData: {},
+            numberData: {},
             finalisedMapData: {},
             count: 0,
             map: undefined,
@@ -186,17 +192,140 @@
           });
 
           this.map.on("load", async function () {
-            await fetch("alldata.json")
+            await fetch("stuff.json")
               .then((res) => {
                 return res.json();
+              })
+              .then((data) => {
+                return (self.mapData = data);
+              })
+              .then(() => {
+                return fetch("data.json");
+              })
+              .then((res) => {
+                return res.json();
+              })
+              .then((data) => {
+                return (self.numberData = data);
+              })
+              .then(() => {
+                var data = self.mapData;
+                console.log(self.placesArray);
+                var finalData = [];
+                for (let dataPoint in data) {
+                  if (
+                    self.placesArray.indexOf(
+                      data[dataPoint].name.toLowerCase()
+                    ) !== -1
+                  ) {
+                    let filtered = self.numberData.filter(
+                      (x) =>
+                        x["Municipal Name"].toLowerCase() ==
+                        data[dataPoint].name.toLowerCase()
+                    );
+                    var finalFiltered = {};
+                    function formatNum(inp) {
+                      if (inp == "-") return 0;
+                      return Number(inp.toString().replace(/[^0-9.-]+/g, ""));
+                    }
+
+                    function getPercent(calc, total) {
+                      return (calc / total) * 100;
+                    }
+
+                    for (let filterItem in filtered) {
+                      let item = filtered[filterItem];
+                      let totalPermits = [
+                        formatNum(item["No. of Permits"]),
+                        formatNum(item["No. of Permits__1"]),
+                        formatNum(item["No. of Permits__2"]),
+                        formatNum(item["No. of Permits__8"]),
+                      ].reduce((a, b) => a + b, 0);
+                      finalFiltered[item["BASIS Year"]] = {
+                        arch: {
+                          permits: formatNum(item["No. of Permits"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits"]),
+                            totalPermits
+                          ),
+                        },
+                        draftsperson: {
+                          permits: formatNum(item["No. of Permits__1"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__1"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__1"]),
+                            totalPermits
+                          ),
+                        },
+                        builder: {
+                          permits: formatNum(item["No. of Permits__2"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__2"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__2"]),
+                            totalPermits
+                          ),
+                        },
+                        notreported: {
+                          permits: formatNum(item["No. of Permits__8"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__8"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__8"]),
+                            totalPermits
+                          ),
+                        },
+                      };
+                    }
+                    finalData.push({
+                      type: "Feature",
+                      geometry: {
+                        type: "Polygon",
+                        coordinates: [data[dataPoint].boundaries],
+                      },
+                      properties: {
+                        title: data[dataPoint].name,
+                        lng: data[dataPoint].labelpoint[0],
+                        lat: data[dataPoint].labelpoint[1],
+                        data: finalFiltered,
+                      },
+                    });
+                  }
+                }
+                return finalData;
               })
               .then((finalData) => {
                 let sourcedData = {
                   type: "geojson",
-                  data: finalData,
+                  data: {
+                    type: "FeatureCollection",
+                    features: finalData,
+                  },
                 };
+                let secondSource = {
+                  type: "FeatureCollection",
+                  features: finalData,
+                };
+                self.finalisedMapData = secondSource;
+                console.log(secondSource);
 
-                self.finalisedMapData = finalData;
+                /*var dataStr =
+                  "data:text/json;charset=utf-8," +
+                  encodeURIComponent(JSON.stringify(secondSource));
+                var dlAnchorElem = document.getElementById(
+                  "downloadAnchorElem"
+                );
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", "scene.json");
+                dlAnchorElem.click(); */
+
                 self.map.addSource("municipals", sourcedData);
               });
 
@@ -223,6 +352,7 @@
                 coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
               }
 
+              console.log(data);
               let html = `${name}<br /> ${data[self.selectedYear][
                 self.selectedType
               ]["permitPercent"].toFixed(0)}%`;
@@ -262,6 +392,8 @@
               let f = x.properties.data[selectedYear][selectedType]["permits"];
               return Number.isNaN(f);
             });
+
+            console.log(minimum, maximum, numbersToUse, temp);
 
             this.map.setPaintProperty("municipals", "fill-color", [
               "interpolate",
