@@ -186,7 +186,7 @@
           });
 
           this.map.on("load", async function () {
-            await fetch("alldata.json")
+            await fetch("alldatainclusive.json")
               .then((res) => {
                 return res.json();
               })

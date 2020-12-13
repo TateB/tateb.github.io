@@ -239,6 +239,11 @@
                         formatNum(item["No. of Permits"]),
                         formatNum(item["No. of Permits__1"]),
                         formatNum(item["No. of Permits__2"]),
+                        formatNum(item["No. of Permits__3"]),
+                        formatNum(item["No. of Permits__4"]),
+                        formatNum(item["No. of Permits__5"]),
+                        formatNum(item["No. of Permits__6"]),
+                        formatNum(item["No. of Permits__7"]),
                         formatNum(item["No. of Permits__8"]),
                       ].reduce((a, b) => a + b, 0);
                       finalFiltered[item["BASIS Year"]] = {
@@ -316,7 +321,7 @@
                 self.finalisedMapData = secondSource;
                 console.log(secondSource);
 
-                /*var dataStr =
+                var dataStr =
                   "data:text/json;charset=utf-8," +
                   encodeURIComponent(JSON.stringify(secondSource));
                 var dlAnchorElem = document.getElementById(
@@ -324,7 +329,7 @@
                 );
                 dlAnchorElem.setAttribute("href", dataStr);
                 dlAnchorElem.setAttribute("download", "scene.json");
-                dlAnchorElem.click(); */
+                dlAnchorElem.click();
 
                 self.map.addSource("municipals", sourcedData);
               });
