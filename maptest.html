@@ -17,6 +17,8 @@
       body {
         margin: 0;
         padding: 0;
+        font-family: sans-serif;
+        font-size: 0.9rem;
       }
 
       #map {
@@ -223,9 +225,41 @@
                 coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
               }
 
-              let html = `${name}<br /> ${data[self.selectedYear][
-                self.selectedType
-              ]["permitPercent"].toFixed(0)}%`;
+              var percents = {
+                arch: data[self.selectedYear]["arch"]["permitPercent"],
+                draftsperson:
+                  data[self.selectedYear]["draftsperson"]["permitPercent"],
+                builder: data[self.selectedYear]["builder"]["permitPercent"],
+                notreported:
+                  data[self.selectedYear]["notreported"]["permitPercent"],
+              };
+
+              percents = {
+                arch: percents.arch.toFixed(2),
+                draftsperson: percents.draftsperson.toFixed(2),
+                builder: percents.builder.toFixed(2),
+                notreported: percents.notreported.toFixed(2),
+                other: (
+                  100 -
+                  (percents.arch +
+                    percents.draftsperson +
+                    percents.builder +
+                    percents.notreported)
+                ).toFixed(2),
+              };
+
+              var html = `${self.toTitleCase(name)} Permits
+              <br />`;
+
+              for (let type in percents) {
+                if (self.selectedType == type) {
+                  html += `<b>${self.toTitleCase(type)}: ${
+                    percents[type]
+                  }%</b><br/>`;
+                } else {
+                  html += `${self.toTitleCase(type)}: ${percents[type]}%<br/>`;
+                }
+              }
 
               new mapboxgl.Popup()
                 .setLngLat(coordinates)
@@ -276,6 +310,11 @@
               maximum,
               "#ce2029",
             ]);
+          },
+          toTitleCase(str) {
+            return str.replace(/\w\S*/g, function (txt) {
+              return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
           },
         },
       };
