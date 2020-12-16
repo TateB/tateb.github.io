@@ -277,6 +277,16 @@
                             totalPermits
                           ),
                         },
+                        engineer: {
+                          permits: formatNum(item["No. of Permits__4"]),
+                          costOfWork: formatNum(
+                            item["Total Reported Cost of Work__4"]
+                          ),
+                          permitPercent: getPercent(
+                            formatNum(item["No. of Permits__4"]),
+                            totalPermits
+                          ),
+                        },
                         notreported: {
                           permits: formatNum(item["No. of Permits__8"]),
                           costOfWork: formatNum(

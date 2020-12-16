@@ -119,6 +119,7 @@
             <option value="arch" selected>Arch</option>
             <option value="draftsperson">Draftsperson</option>
             <option value="builder">Builder</option>
+            <option value="engineer">Engineer</option>
             <option value="notreported">Not Reported</option>
           </select>
         </div>
@@ -171,7 +172,13 @@
               "yarra",
               "yarra ranges",
             ],
-            types: ["Arch", "Draftsperson", "Builder", "Not Reported"],
+            types: [
+              "Arch",
+              "Draftsperson",
+              "Builder",
+              "Not Reported",
+              "Engineer",
+            ],
             selectedType: "arch",
             selectedYear: "2020 (Oct)",
             finalisedMapData: {},
@@ -192,7 +199,7 @@
           });
 
           this.map.on("load", async function () {
-            await fetch("alldatainclusive.json")
+            await fetch("alldatainclusive2.json")
               .then((res) => {
                 return res.json();
               })
@@ -234,6 +241,7 @@
                 draftsperson:
                   data[self.selectedYear]["draftsperson"]["permitPercent"],
                 builder: data[self.selectedYear]["builder"]["permitPercent"],
+                engineer: data[self.selectedYear]["engineer"]["permitPercent"],
                 notreported:
                   data[self.selectedYear]["notreported"]["permitPercent"],
               };
@@ -242,12 +250,14 @@
                 arch: percents.arch.toFixed(2),
                 draftsperson: percents.draftsperson.toFixed(2),
                 builder: percents.builder.toFixed(2),
+                engineer: percents.engineer.toFixed(2),
                 notreported: percents.notreported.toFixed(2),
                 other: (
                   100 -
                   (percents.arch +
                     percents.draftsperson +
                     percents.builder +
+                    percents.engineer +
                     percents.notreported)
                 ).toFixed(2),
               };
@@ -295,6 +305,8 @@
             let maximum = Math.max(...numbersToUse);
             let minimum = Math.min(...numbersToUse);
             self.maximum = maximum;
+
+            console.log(selectedType);
 
             var temp = this.finalisedMapData.features.filter((x) => {
               let f = x.properties.data[selectedYear][selectedType]["permits"];
