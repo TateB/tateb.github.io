@@ -32,14 +32,13 @@
       }
 
       #main {
-        margin-top: 20px;
         position: absolute;
         top: 0;
         width: 100%;
         margin-right: 20px;
         display: flex;
         flex-direction: column;
-        z-index: 100;
+        z-index: 10;
         justify-content: flex-end;
         align-items: flex-end;
       }
@@ -48,20 +47,9 @@
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
       }
 
-      #selects {
-        margin-right: 30px;
-        width: 200px;
-        padding: 10px;
-        background-color: white;
-      }
-
-      #selects select:first-of-type {
-        margin-right: 10px;
-      }
-
       #key {
         margin-top: 20px;
-        margin-right: 30px;
+        margin-right: 330px;
         width: 200px;
         background-color: white;
         padding: 10px;
@@ -85,9 +73,105 @@
         justify-content: space-between;
       }
 
+      #sidebar {
+        width: 300px;
+        height: 100vh;
+        z-index: 20;
+        background-color: white;
+      }
+
+      #innersidebar {
+        padding: 20px;
+      }
+
+      #selects select {
+        width: 100%;
+      }
+
+      #inner {
+        display: flex;
+        flex-direction: row-reverse;
+      }
+
       .mapboxgl-popup {
         max-width: 400px;
         font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+      }
+
+      .line {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .line p {
+        padding: 0;
+        margin: 3px 0;
+      }
+
+      .square {
+        width: 20px;
+        height: 20px;
+        opacity: 0.2;
+      }
+
+      .arch {
+        background-color: rgb(255, 99, 132);
+      }
+
+      .draftsperson {
+        background-color: rgb(54, 162, 235);
+      }
+
+      .builder {
+        background-color: rgb(255, 206, 86);
+      }
+
+      .engineer {
+        background-color: rgb(75, 192, 192);
+      }
+
+      .notreported {
+        background-color: rgb(153, 102, 255);
+      }
+
+      .other {
+        background-color: rgb(255, 159, 64);
+      }
+
+      .square.highlighted {
+        opacity: 0.8;
+      }
+
+      .line > div {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .line > div > div {
+        margin-right: 2px;
+      }
+
+      .mobilearrow {
+        display: none;
+      }
+
+      @media only screen and (max-width: 700px) {
+        .nodisplay {
+          display: none;
+        }
+
+        #sidebar {
+          width: 100%;
+          height: auto;
+        }
+
+        .mobilearrow {
+          display: block;
+        }
+
+        .mobileDisplaying {
+          display: flex;
+        }
       }
     </style>
   </head>
@@ -95,35 +179,7 @@
   <body>
     <div id="app">
       <div id="main">
-        <div id="selects">
-          <a id="downloadAnchorElem" style="display: none"></a>
-          <select
-            v-model="selectedYear"
-            @change="selectNew"
-            name="years"
-            id="years"
-          >
-            <option value="2014">2014</option>
-            <option value="2015">2015</option>
-            <option value="2016">2016</option>
-            <option value="2017">2017</option>
-            <option value="2018">2018</option>
-            <option value="2019">2019</option>
-            <option value="2020 (Oct)">2020 (Oct)</option>
-          </select>
-          <select
-            v-model="selectedType"
-            @change="selectNew"
-            value="types"
-            id="types"
-          >
-            <option value="arch" selected>Arch</option>
-            <option value="draftsperson">Draftsperson</option>
-            <option value="builder">Builder</option>
-            <option value="engineer">Engineer</option>
-            <option value="notreported">Not Reported</option>
-          </select>
-        </div>
+        <div class="mobilearrow"><p>down arrow</p></div>
         <div id="key">
           <p style="margin-bottom: 5px">Key:</p>
           <div id="gradient">
@@ -134,7 +190,92 @@
         </div>
       </div>
 
-      <div id="map"></div>
+      <div id="inner">
+        <div id="map"></div>
+        <div id="sidebar">
+          <div id="innersidebar">
+            <h2>Map Options</h2>
+            <div id="selects">
+              <a id="downloadAnchorElem" style="display: none"></a>
+              <select
+                v-model="selectedYear"
+                @change="selectNew"
+                name="years"
+                id="years"
+              >
+                <option value="2014">2014</option>
+                <option value="2015">2015</option>
+                <option value="2016">2016</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2019">2019</option>
+                <option value="2020 (Oct)">2020 (Oct)</option>
+              </select>
+              <select
+                v-model="selectedType"
+                @change="selectNew"
+                value="types"
+                id="types"
+              >
+                <option value="arch" selected>Arch</option>
+                <option value="draftsperson">Draftsperson</option>
+                <option value="builder">Builder</option>
+                <option value="engineer">Engineer</option>
+                <option value="notreported">Not Reported</option>
+              </select>
+            </div>
+            <h2>Selected Area</h2>
+            <div v-if="selectedArea == undefined">
+              <h3>None selected</h3>
+              <p>Select a municipality on the map to display information.</p>
+            </div>
+            <div v-else mounted="console.log('yes')">
+              <h3>{{ selectedArea.name }} Permits</h3>
+              <h4>{{ selectedYear }}</h4>
+              <div v-for="(percent, key) in selectedArea.percents" :key="key">
+                <div v-if="key == selectedType" class="line">
+                  <div>
+                    <div class="square highlighted" :class="key"></div>
+                    <p><b>{{ key }}</b></p>
+                  </div>
+                  <p>
+                    <b>
+                      {{
+                      selectedArea.data[selectedYear][key]["permitPercent"].toFixed(2)
+                      }}%</b
+                    >
+                  </p>
+                </div>
+                <div v-else-if="key != 'other'" class="line">
+                  <div>
+                    <div class="square" :class="key"></div>
+                    <p>{{ key }}</p>
+                  </div>
+                  <p>
+                    {{
+                    selectedArea.data[selectedYear][key]["permitPercent"].toFixed(2)
+                    }}%
+                  </p>
+                </div>
+                <div v-else class="line">
+                  <div>
+                    <div class="square" :class="key"></div>
+                    <p>{{ key }}</p>
+                  </div>
+                  <p>
+                    {{
+                    calculateOther(selectedArea.data[selectedYear]).toFixed(2)
+                    }}%
+                  </p>
+                </div>
+              </div>
+              <div class="chart">
+                <canvas id="mainChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <script>
       const Main = {
@@ -182,10 +323,14 @@
             ],
             selectedType: "arch",
             selectedYear: "2020 (Oct)",
+            selectedArea: undefined,
             finalisedMapData: {},
+            clickedId: null,
             count: 0,
             map: undefined,
             maximum: 0,
+            chart: undefined,
+            mobileDisplayInfo: false,
           };
         },
         mounted() {
@@ -208,6 +353,7 @@
                 let sourcedData = {
                   type: "geojson",
                   data: finalData,
+                  generateId: true,
                 };
 
                 self.finalisedMapData = finalData;
@@ -220,15 +366,58 @@
               source: "municipals",
               layout: {},
               paint: {
-                "fill-outline-color": "black",
                 "fill-opacity": 0.8,
               },
             });
+
+            self.map.addLayer({
+              id: "municpials-line",
+              type: "line",
+              source: "municipals",
+              paint: {
+                "line-color": [
+                  "case",
+                  ["boolean", ["feature-state", "click"], false],
+                  "green",
+                  "black",
+                ],
+                "line-width": [
+                  "case",
+                  ["boolean", ["feature-state", "click"], false],
+                  4,
+                  1,
+                ],
+              },
+            });
+
+            self.map.on("click", "municipals", (e) => {
+              console.log(e.features.length);
+              console.log(self.clickedId);
+              if (e.features.length > 0) {
+                if (self.clickedId != null) {
+                  self.map.setFeatureState(
+                    { source: "municipals", id: self.clickedId },
+                    { click: false }
+                  );
+                }
+                self.clickedId = e.features[0].id;
+                self.map.setFeatureState(
+                  { source: "municipals", id: self.clickedId },
+                  { click: true }
+                );
+              }
+            });
+
             self.map.on("click", "municipals", function (e) {
               var properties = e.features[0].properties;
               var coordinates = e.lngLat;
               var name = properties.title;
               var data = JSON.parse(properties.data);
+              self.selectedArea = {
+                name: self.toTitleCase(name),
+                data: data,
+              };
+              console.log(self.selectedArea);
 
               // Ensure that if the map is zoomed out such that multiple
               // copies of the feature are visible, the popup appears
@@ -262,6 +451,7 @@
                     percents.notreported)
                 ).toFixed(2),
               };
+              self.selectedArea.percents = percents;
 
               var html = `${self.toTitleCase(name)} Permits
               <br />`;
@@ -276,75 +466,90 @@
                 }
               }
 
-              html += '<canvas id="' + self.selectedYear + name + '"></canvas>';
+              self.$nextTick(() => {
+                var ctx = document.getElementById("mainChart").getContext("2d");
 
-              new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(html)
-                .addTo(self.map);
+                ctx.height = 600;
+                var highlightOpacity = {
+                  arch: 0.2,
+                  draftsperson: 0.2,
+                  builder: 0.2,
+                  engineer: 0.2,
+                  notreported: 0.2,
+                  other: 0.2,
+                };
 
-              var ctx = document
-                .getElementById(self.selectedYear + name)
-                .getContext("2d");
+                highlightOpacity[self.selectedType] = 0.8;
 
-              ctx.height = 600;
-              var highlightOpacity = {
-                arch: 0.2,
-                draftsperson: 0.2,
-                builder: 0.2,
-                engineer: 0.2,
-                notreported: 0.2,
-                other: 0.2,
-              };
-
-              highlightOpacity[self.selectedType] = 0.8;
-
-              var chart = new Chart(ctx, {
-                // The type of chart we want to create
-                type: "pie",
-                // The data for our dataset
-                data: {
-                  labels: Object.keys(percents),
-                  datasets: [
-                    {
-                      label: "% Of Permits",
-                      data: Object.values(percents),
-                      backgroundColor: [
-                        `rgba(255, 99, 132, ${highlightOpacity.arch})`,
-                        `rgba(54, 162, 235, ${highlightOpacity.draftsperson})`,
-                        `rgba(255, 206, 86, ${highlightOpacity.builder})`,
-                        `rgba(75, 192, 192, ${highlightOpacity.engineer})`,
-                        `rgba(153, 102, 255, ${highlightOpacity.notreported})`,
-                        `rgba(255, 159, 64, ${highlightOpacity.other})`,
+                if (self.chart == undefined) {
+                  self.chart = new Chart(ctx, {
+                    // The type of chart we want to create
+                    type: "pie",
+                    // The data for our dataset
+                    data: {
+                      labels: Object.keys(percents),
+                      datasets: [
+                        {
+                          label: "% Of Permits",
+                          data: Object.values(percents),
+                          backgroundColor: [
+                            `rgba(255, 99, 132, ${highlightOpacity.arch})`,
+                            `rgba(54, 162, 235, ${highlightOpacity.draftsperson})`,
+                            `rgba(255, 206, 86, ${highlightOpacity.builder})`,
+                            `rgba(75, 192, 192, ${highlightOpacity.engineer})`,
+                            `rgba(153, 102, 255, ${highlightOpacity.notreported})`,
+                            `rgba(255, 159, 64, ${highlightOpacity.other})`,
+                          ],
+                        },
                       ],
                     },
-                  ],
-                },
 
-                // Configuration options go here
-                options: {
-                  legend: {
-                    display: false,
-                  },
-                  tooltips: {
-                    mode: "label",
-                    callbacks: {
-                      label: function (tooltipItem, data) {
-                        return (
-                          data["labels"][tooltipItem["index"]] +
-                          ": " +
-                          data["datasets"][0]["data"][tooltipItem["index"]] +
-                          "%"
-                        );
+                    // Configuration options go here
+                    options: {
+                      legend: {
+                        display: false,
                       },
+                      tooltips: {
+                        mode: "label",
+                        callbacks: {
+                          label: function (tooltipItem, data) {
+                            return (
+                              data["labels"][tooltipItem["index"]] +
+                              ": " +
+                              data["datasets"][0]["data"][
+                                tooltipItem["index"]
+                              ] +
+                              "%"
+                            );
+                          },
+                        },
+                      },
+                      responsive: true,
+                      aspectRatio: 1.3,
                     },
-                  },
-                  responsive: true,
-                  aspectRatio: 1.3,
-                },
+                  });
+                } else {
+                  self.chart.data = {
+                    labels: Object.keys(percents),
+                    datasets: [
+                      {
+                        label: "% Of Permits",
+                        data: Object.values(percents),
+                        backgroundColor: [
+                          `rgba(255, 99, 132, ${highlightOpacity.arch})`,
+                          `rgba(54, 162, 235, ${highlightOpacity.draftsperson})`,
+                          `rgba(255, 206, 86, ${highlightOpacity.builder})`,
+                          `rgba(75, 192, 192, ${highlightOpacity.engineer})`,
+                          `rgba(153, 102, 255, ${highlightOpacity.notreported})`,
+                          `rgba(255, 159, 64, ${highlightOpacity.other})`,
+                        ],
+                      },
+                    ],
+                  };
+                  self.chart.update();
+                }
               });
             });
-
             // Change the cursor to a pointer when the mouse is over the places layer.
             self.map.on("mouseenter", "places", function () {
               self.map.getCanvas().style.cursor = "pointer";
@@ -375,6 +580,77 @@
               return Number.isNaN(f);
             });
 
+            if (self.selectedArea != undefined) {
+              var highlightOpacity = {
+                arch: 0.2,
+                draftsperson: 0.2,
+                builder: 0.2,
+                engineer: 0.2,
+                notreported: 0.2,
+                other: 0.2,
+              };
+
+              highlightOpacity[self.selectedType] = 0.8;
+
+              var percents = {
+                arch:
+                  self.selectedArea.data[self.selectedYear]["arch"][
+                    "permitPercent"
+                  ],
+                draftsperson:
+                  self.selectedArea.data[self.selectedYear]["draftsperson"][
+                    "permitPercent"
+                  ],
+                builder:
+                  self.selectedArea.data[self.selectedYear]["builder"][
+                    "permitPercent"
+                  ],
+                engineer:
+                  self.selectedArea.data[self.selectedYear]["engineer"][
+                    "permitPercent"
+                  ],
+                notreported:
+                  self.selectedArea.data[self.selectedYear]["notreported"][
+                    "permitPercent"
+                  ],
+              };
+
+              percents = {
+                arch: percents.arch.toFixed(2),
+                draftsperson: percents.draftsperson.toFixed(2),
+                builder: percents.builder.toFixed(2),
+                engineer: percents.engineer.toFixed(2),
+                notreported: percents.notreported.toFixed(2),
+                other: (
+                  100 -
+                  (percents.arch +
+                    percents.draftsperson +
+                    percents.builder +
+                    percents.engineer +
+                    percents.notreported)
+                ).toFixed(2),
+              };
+
+              self.chart.data = {
+                labels: Object.keys(percents),
+                datasets: [
+                  {
+                    label: "% Of Permits",
+                    data: Object.values(percents),
+                    backgroundColor: [
+                      `rgba(255, 99, 132, ${highlightOpacity.arch})`,
+                      `rgba(54, 162, 235, ${highlightOpacity.draftsperson})`,
+                      `rgba(255, 206, 86, ${highlightOpacity.builder})`,
+                      `rgba(75, 192, 192, ${highlightOpacity.engineer})`,
+                      `rgba(153, 102, 255, ${highlightOpacity.notreported})`,
+                      `rgba(255, 159, 64, ${highlightOpacity.other})`,
+                    ],
+                  },
+                ],
+              };
+              self.chart.update();
+            }
+
             this.map.setPaintProperty("municipals", "fill-color", [
               "interpolate",
               ["linear"],
@@ -393,6 +669,16 @@
             return str.replace(/\w\S*/g, function (txt) {
               return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
             });
+          },
+          calculateOther(data) {
+            return (
+              100 -
+              (data.arch.permitPercent +
+                data.draftsperson.permitPercent +
+                data.builder.permitPercent +
+                data.engineer.permitPercent +
+                data.notreported.permitPercent)
+            );
           },
         },
       };
