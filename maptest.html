@@ -13,6 +13,7 @@
       rel="stylesheet"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.0.2/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
     <style>
       body {
         margin: 0;
@@ -275,10 +276,73 @@
                 }
               }
 
+              html += '<canvas id="' + self.selectedYear + name + '"></canvas>';
+
               new mapboxgl.Popup()
                 .setLngLat(coordinates)
                 .setHTML(html)
                 .addTo(self.map);
+
+              var ctx = document
+                .getElementById(self.selectedYear + name)
+                .getContext("2d");
+
+              ctx.height = 600;
+              var highlightOpacity = {
+                arch: 0.2,
+                draftsperson: 0.2,
+                builder: 0.2,
+                engineer: 0.2,
+                notreported: 0.2,
+                other: 0.2,
+              };
+
+              highlightOpacity[self.selectedType] = 0.8;
+
+              var chart = new Chart(ctx, {
+                // The type of chart we want to create
+                type: "pie",
+                // The data for our dataset
+                data: {
+                  labels: Object.keys(percents),
+                  datasets: [
+                    {
+                      label: "% Of Permits",
+                      data: Object.values(percents),
+                      backgroundColor: [
+                        `rgba(255, 99, 132, ${highlightOpacity.arch})`,
+                        `rgba(54, 162, 235, ${highlightOpacity.draftsperson})`,
+                        `rgba(255, 206, 86, ${highlightOpacity.builder})`,
+                        `rgba(75, 192, 192, ${highlightOpacity.engineer})`,
+                        `rgba(153, 102, 255, ${highlightOpacity.notreported})`,
+                        `rgba(255, 159, 64, ${highlightOpacity.other})`,
+                      ],
+                    },
+                  ],
+                },
+
+                // Configuration options go here
+                options: {
+                  legend: {
+                    display: false,
+                  },
+                  tooltips: {
+                    mode: "label",
+                    callbacks: {
+                      label: function (tooltipItem, data) {
+                        return (
+                          data["labels"][tooltipItem["index"]] +
+                          ": " +
+                          data["datasets"][0]["data"][tooltipItem["index"]] +
+                          "%"
+                        );
+                      },
+                    },
+                  },
+                  responsive: true,
+                  aspectRatio: 1.3,
+                },
+              });
             });
 
             // Change the cursor to a pointer when the mouse is over the places layer.
@@ -305,8 +369,6 @@
             let maximum = Math.max(...numbersToUse);
             let minimum = Math.min(...numbersToUse);
             self.maximum = maximum;
-
-            console.log(selectedType);
 
             var temp = this.finalisedMapData.features.filter((x) => {
               let f = x.properties.data[selectedYear][selectedType]["permits"];
