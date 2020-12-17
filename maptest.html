@@ -161,6 +161,13 @@
         }
 
         #sidebar {
+          display: none;
+        }
+
+        #mobilesidebar {
+          display: flex;
+          z-index: 20;
+          background-color: white;
           width: 100%;
           height: auto;
         }
@@ -172,6 +179,14 @@
         .mobileDisplaying {
           display: flex;
         }
+
+        #innersidebar {
+          width: 100%;
+        }
+
+        .closeopen {
+          font-size: 1.2em;
+        }
       }
     </style>
   </head>
@@ -179,7 +194,7 @@
   <body>
     <div id="app">
       <div id="main">
-        <div class="mobilearrow"><p>down arrow</p></div>
+        <button @click="openmenu">open menu</button>
         <div id="key">
           <p style="margin-bottom: 5px">Key:</p>
           <div id="gradient">
@@ -271,6 +286,93 @@
               </div>
               <div class="chart">
                 <canvas id="mainChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          id="mobilesidebar"
+          :style="{ display: mobileDisplayInfo ? 'flex' : 'none' }"
+        >
+          <div id="innersidebar">
+            <button class="closeopen" @click="closemenu">close</button>
+            <h2>Map Options</h2>
+            <div id="selects">
+              <a id="downloadAnchorElem" style="display: none"></a>
+              <select
+                v-model="selectedYear"
+                @change="selectNew"
+                name="years"
+                id="years"
+              >
+                <option value="2014">2014</option>
+                <option value="2015">2015</option>
+                <option value="2016">2016</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2019">2019</option>
+                <option value="2020 (Oct)">2020 (Oct)</option>
+              </select>
+              <select
+                v-model="selectedType"
+                @change="selectNew"
+                value="types"
+                id="types"
+              >
+                <option value="arch" selected>Arch</option>
+                <option value="draftsperson">Draftsperson</option>
+                <option value="builder">Builder</option>
+                <option value="engineer">Engineer</option>
+                <option value="notreported">Not Reported</option>
+              </select>
+            </div>
+            <h2>Selected Area</h2>
+            <div v-if="selectedArea == undefined">
+              <h3>None selected</h3>
+              <p>Select a municipality on the map to display information.</p>
+            </div>
+            <div v-else mounted="console.log('yes')">
+              <h3>{{ selectedArea.name }} Permits</h3>
+              <h4>{{ selectedYear }}</h4>
+              <div v-for="(percent, key) in selectedArea.percents" :key="key">
+                <div v-if="key == selectedType" class="line">
+                  <div>
+                    <div class="square highlighted" :class="key"></div>
+                    <p><b>{{ key }}</b></p>
+                  </div>
+                  <p>
+                    <b>
+                      {{
+                      selectedArea.data[selectedYear][key]["permitPercent"].toFixed(2)
+                      }}%</b
+                    >
+                  </p>
+                </div>
+                <div v-else-if="key != 'other'" class="line">
+                  <div>
+                    <div class="square" :class="key"></div>
+                    <p>{{ key }}</p>
+                  </div>
+                  <p>
+                    {{
+                    selectedArea.data[selectedYear][key]["permitPercent"].toFixed(2)
+                    }}%
+                  </p>
+                </div>
+                <div v-else class="line">
+                  <div>
+                    <div class="square" :class="key"></div>
+                    <p>{{ key }}</p>
+                  </div>
+                  <p>
+                    {{
+                    calculateOther(selectedArea.data[selectedYear]).toFixed(2)
+                    }}%
+                  </p>
+                </div>
+              </div>
+              <div class="chart">
+                <canvas id="mobileChart"></canvas>
               </div>
             </div>
           </div>
@@ -409,6 +511,7 @@
             });
 
             self.map.on("click", "municipals", function (e) {
+              self.openmenu();
               var properties = e.features[0].properties;
               var coordinates = e.lngLat;
               var name = properties.title;
@@ -467,7 +570,15 @@
               }
 
               self.$nextTick(() => {
-                var ctx = document.getElementById("mainChart").getContext("2d");
+                if (screen.width > 900) {
+                  var ctx = document
+                    .getElementById("mainChart")
+                    .getContext("2d");
+                } else {
+                  var ctx = document
+                    .getElementById("mobileChart")
+                    .getContext("2d");
+                }
 
                 ctx.height = 600;
                 var highlightOpacity = {
@@ -679,6 +790,12 @@
                 data.engineer.permitPercent +
                 data.notreported.permitPercent)
             );
+          },
+          closemenu() {
+            this.mobileDisplayInfo = false;
+          },
+          openmenu() {
+            this.mobileDisplayInfo = true;
           },
         },
       };
